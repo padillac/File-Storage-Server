@@ -106,25 +106,39 @@ class FileServer:
                 path = os.path.join(self.storageDir, msg[1])
             else:
                 path = self.storageDir
-            fileList = os.listdir(path)
+            if not os.path.isdir(path):
+                clientSock.sendall("Error: requested directory does not exist".encode())
+                self.safe_print("!-- Error: Client on port {0} requested to list directory that does not exist: {1}".format(clientAddr, path))
+                clientSock.close()
+                return
 
+            fileList = os.listdir(path)
             if len(fileList) == 0:
                 response = "<Empty>"
             else:
                 response = ""
                 for f in fileList:
                     response += f + "\n"
+            clientSock.sendall("ok".encode())
+            time.sleep(0.00001)
             clientSock.sendall(response.encode())
 
 
         # Download file
         if msg[0] == 'd':
             filePath = os.path.join(self.storageDir, msg[1])
+            if not os.path.isfile(filePath):
+                clientSock.sendall("Error: file does not exist".encode())
+                self.safe_print("!-- Error: Client on port {0} requested file that does not exist: {1}".format(clientAddr, filePath))
+                clientSock.close()
+                return
             self.safe_print("Client on {0} requested file: {1}".format(clientAddr, filePath))
             try:
                 with open(filePath, 'rb') as f:
+                    clientSock.sendall("ok".encode())
                     clientSock.sendfile(f)
                     self.safe_print("Sent.")
+                    clientSock.close()
             except:
                 self.safe_print("!-- Error sending requested file {0} on port {1}".format(filePath, clientAddr))
                 clientSock.close()
