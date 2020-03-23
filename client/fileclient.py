@@ -32,14 +32,47 @@ def makeConnection(server, port):
     return handlerSock
 
 
-def uploadFile(sock, path):
-    print("Uploading {0}".format(path))
+def listDir(sock, path):
+    if path == None:
+        path = '.'
+    try:
+        print("Listing {0}".format(path))
+        sock.sendall("l {0}".format(path).encode())
+        resp = sock.recv(1024).decode()
+        if resp != "ok":
+            print("Error message from server: {0}".format(resp))
+            sys.exit(1)
+        data = sock.recv(1024).decode()
+        print("Directory listing for {0}:\n".format(path))
+        print(data)
+    except:
+        print("Error downloading file from server.")
 
 def downloadFile(sock, path):
-    print("Downloading {0}".format(path))
+    try:
+        print("Downloading {0}".format(path))
+        sock.sendall("d {0}".format(path).encode())
+        resp = sock.recv(1024).decode()
+        if resp != "ok":
+            print("Error message from server: {0}".format(resp))
+            sys.exit(1)
+        with open(path, "wb") as f:
+            f.write(sock.recv(1024))
+    except:
+        print("Error downloading file from server.")
 
-def listDir(sock, path):
-    print("Listing {0}".format(path))
+def uploadFile(sock, path):
+    try:
+        print("Uploading {0}".format(path))
+        sock.sendall("u {0}".format(path).encode())
+        resp = sock.recv(1024).decode()
+        if resp != "ok":
+            print("Error message from server: {0}".format(resp))
+            sys.exit(1)
+        with open(path, "rb") as f:
+            sock.sendfile(f)
+    except:
+        print("Error uploading file to server.")
 
 
 
@@ -49,7 +82,7 @@ def main():
         server = sys.argv[1].split(":")[0]
         port = int(sys.argv[1].split(":")[1])
         option = sys.argv[2]
-        if sys.argv[3]:
+        if len(sys.argv) == 4:
             target = sys.argv[3]
         else:
             target = None
