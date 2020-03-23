@@ -61,15 +61,17 @@ class FileServer:
         self.sock.listen(10)
 
         while True:
-            clientSock, clientAddr = self.sock.accept()
-            self.safe_print("\n-- New connection received from {0}".format(clientSock.getpeername()))
-
+            #initialize new socket
             newSock = socket.socket()
             newSock.bind((self.host, 0))
             freePort = newSock.getsockname()[1]
+
+            #receive connection and start handler process
+            clientSock, clientAddr = self.sock.accept()
             newSock.close()
             Process(target=self.connection_manager, args=(freePort,)).start()
-
+            self.safe_print("\n-- New connection received from {0}".format(clientSock.getpeername()))
+            
             self.safe_print("Routing to new socket on port: {0}".format(freePort))
 
             clientSock.sendall(str(freePort).encode())
@@ -79,7 +81,7 @@ class FileServer:
     def connection_manager(self, p):
         newSock = socket.socket()
         newSock.bind((self.host,p))
-        newSock.settimeout(10)
+        newSock.settimeout(20)
         newSock.listen(0)
         self.safe_print("Handler created on {0}".format(p))
         try:
