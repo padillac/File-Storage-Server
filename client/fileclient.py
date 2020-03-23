@@ -1,7 +1,7 @@
 import sys, socket, time
 
 def usage():
-    print ("Usage: python fileclient.py hostname:port [options]\n\nOptions:\n\t-u FILE\tUpload file to server\n\t-d FILE\tDownload file from server\n\t-l [DIR]\tView files in DIR, or server root if no DIR.")
+    print ("Usage: python fileclient.py hostname:port [options]\n\nOptions:\n\t-u FILE\t\tUpload file to server\n\t-d FILE\t\tDownload file from server\n\t-l [DIR]\tView files in DIR, or server root if no DIR.")
 
 
 def makeConnection(server, port):
@@ -9,7 +9,6 @@ def makeConnection(server, port):
         serverSock = socket.socket()
         serverSock.connect((server, port))
         handlerPort = int(serverSock.recv(1024).decode())
-        print("handler:", handlerPort)
     except:
         print("Could not connect to server at {0}:{1}".format(server, port))
         sys.exit(1)
@@ -27,7 +26,7 @@ def makeConnection(server, port):
                 handlerSock = socket.socket()
                 handlerSock.connect((server, handlerPort))
             except:
-                print("Could not connect to handler at {0}:{1}".format(server, handlerPort))
+                print("Connected to server, but could not connect to request handler at {0}:{1}".format(server, handlerPort))
                 sys.exit(1)
     return handlerSock
 
@@ -36,35 +35,39 @@ def listDir(sock, path):
     if path == None:
         path = '.'
     try:
-        print("Listing {0}".format(path))
+        print("Listing {0}..".format(path))
         sock.sendall("l {0}".format(path).encode())
         resp = sock.recv(1024).decode()
         if resp != "ok":
             print("Error message from server: {0}".format(resp))
             sys.exit(1)
         data = sock.recv(1024).decode()
+        if path == '.':
+            path = "server root"
         print("Directory listing for {0}:\n".format(path))
         print(data)
     except:
         print("Error downloading file from server.")
 
 def downloadFile(sock, path):
+    localPath = path.split("/")[-1]
     try:
-        print("Downloading {0}".format(path))
+        print("Downloading {0}, saving to: {1}..".format(path, localPath))
         sock.sendall("d {0}".format(path).encode())
         resp = sock.recv(1024).decode()
         if resp != "ok":
             print("Error message from server: {0}".format(resp))
             sys.exit(1)
-        with open(path, "wb") as f:
+        with open(localPath, "wb") as f:
             f.write(sock.recv(1024))
     except:
         print("Error downloading file from server.")
 
 def uploadFile(sock, path):
+    remotePath = path.split("/")[-1]
     try:
-        print("Uploading {0}".format(path))
-        sock.sendall("u {0}".format(path).encode())
+        print("Uploading {0}, remote location: {1}..".format(path, remotePath))
+        sock.sendall("u {0}".format(remotePath).encode())
         resp = sock.recv(1024).decode()
         if resp != "ok":
             print("Error message from server: {0}".format(resp))
@@ -90,8 +93,6 @@ def main():
         usage()
         sys.exit(1)
 
-    print("server: {0}, port: {1}, option: {2}, target: {3}".format(server, port, option, target))
-
     handlerSock = makeConnection(server, port)
 
     if option == "-u":
@@ -100,10 +101,12 @@ def main():
         downloadFile(handlerSock, target)
     elif option == "-l":
         listDir(handlerSock, target)
+    else:
+        usage()
+        sys.exit(1)
 
     print("done.")
     sys.exit()
-
 
 
 main()
