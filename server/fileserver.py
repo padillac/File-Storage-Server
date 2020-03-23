@@ -13,9 +13,6 @@ class FileServer:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.host, self.port))
-        
-  
-        
 
 
     def read_config_file(self):
@@ -46,12 +43,14 @@ class FileServer:
         # Input handler:
         while True:
             time.sleep(.1)
-            c = input(">")
+            c = input(">").lower()
             
             if c == "exit":
                 self.safe_print("exiting..")
                 listenerProcess.terminate()
                 sys.exit()
+            if c == "h" or c == "help":
+                self.safe_print("HELP MENU")
 
 
 
@@ -78,6 +77,7 @@ class FileServer:
             clientSock.close()
 
 
+
     def connection_manager(self, p):
         newSock = socket.socket()
         newSock.bind((self.host,p))
@@ -89,16 +89,15 @@ class FileServer:
         except socket.timeout:
             return        
         
-
+        # Parse message and execute command
         rawdata = clientSock.recv(1024).decode("ascii").strip()
         if not rawdata:
             clientSock.close()
             return
         
-        ################################################# HANDLE FILE UPLOADS AND REQUESTS
         msg = rawdata.split()
 
-        self.safe_print("Received message: " + str(msg))
+        self.safe_print("Client at {0} sent message: {1}".format(clientAddr, str(msg)))
 
         # List files
         if msg[0] == "l":
@@ -108,7 +107,7 @@ class FileServer:
                 path = self.storageDir
             if not os.path.isdir(path):
                 clientSock.sendall("Error: requested directory does not exist".encode())
-                self.safe_print("!-- Error: Client on port {0} requested to list directory that does not exist: {1}".format(clientAddr, path))
+                self.safe_print("!-- Error: Client at {0} requested to list directory that does not exist: {1}".format(clientAddr, path))
                 clientSock.close()
                 return
 
@@ -129,10 +128,10 @@ class FileServer:
             filePath = os.path.join(self.storageDir, msg[1])
             if not os.path.isfile(filePath):
                 clientSock.sendall("Error: file does not exist".encode())
-                self.safe_print("!-- Error: Client on port {0} requested file that does not exist: {1}".format(clientAddr, filePath))
+                self.safe_print("!-- Error: Client at {0} requested file that does not exist: {1}".format(clientAddr, filePath))
                 clientSock.close()
                 return
-            self.safe_print("Client on {0} requested file: {1}".format(clientAddr, filePath))
+            self.safe_print("Client at {0} requested file: {1}".format(clientAddr, filePath))
             try:
                 with open(filePath, 'rb') as f:
                     clientSock.sendall("ok".encode())
@@ -148,7 +147,7 @@ class FileServer:
         # Upload file
         if msg[0] == 'u':
             filePath = os.path.join(self.storageDir, msg[1])
-            self.safe_print("Client on {0} wants to upload file: {1}".format(clientAddr, filePath))
+            self.safe_print("Client at {0} wants to upload file: {1}".format(clientAddr, filePath))
             if os.path.exists(filePath):
                 self.safe_print("!-- File {0} already exists, cannot be uploaded (port {1})".format(filePath, clientAddr))
                 clientSock.sendall("!-- File {0} already exists, cannot be uploaded (port {1})".format(filePath, clientAddr).encode())
