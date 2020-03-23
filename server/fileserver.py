@@ -51,7 +51,7 @@ class FileServer:
             if c == "exit":
                 self.safe_print("exiting..")
                 listenerProcess.terminate()
-                exit()
+                sys.exit()
 
 
 
