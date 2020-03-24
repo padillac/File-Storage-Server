@@ -81,7 +81,7 @@ class FileServer:
     def connection_manager(self, p):
         newSock = socket.socket()
         newSock.bind((self.host,p))
-        newSock.settimeout(20)
+        newSock.settimeout(10)
         newSock.listen(0)
         self.safe_print("New handler created on {0}".format(p))
         try:
@@ -92,7 +92,7 @@ class FileServer:
             return    
         
         # Parse message and execute command
-        rawdata = clientSock.recv(1024).decode("ascii").strip()
+        rawdata = clientSock.recv(256).decode().strip()
         if not rawdata:
             clientSock.close()
             return
@@ -139,7 +139,9 @@ class FileServer:
             self.safe_print("{0} requested file: {1}".format(clientDescriptor, filePath))
             try:
                 with open(filePath, 'rb') as f:
-                    clientSock.sendall("ok".encode())
+                    size = os.fstat(f.fileno()).st_size
+                    self.safe_print("File Size: {0}".format(size))
+                    clientSock.sendall("ok {0}".format(size).encode())
                     clientSock.sendfile(f)
                     self.safe_print("Sent file.")
                     clientSock.close()
@@ -155,13 +157,33 @@ class FileServer:
             self.safe_print("{0} wants to upload file: {1}".format(clientDescriptor, filePath))
             if os.path.exists(filePath):
                 self.safe_print("!-- File {0} already exists, cannot be uploaded ({1})".format(filePath, clientDescriptor))
-                clientSock.sendall("!-- File {0} already exists, cannot be uploaded ({1})".format(filePath, clientDescriptor).encode())
+                clientSock.sendall("Error: File {0} already exists, cannot be uploaded".format(filePath).encode())
                 clientSock.close()
                 return
-            with open(filePath, 'wb') as f:
-                clientSock.sendall("ok".encode())
-                f.write(clientSock.recv(4096))
-            self.safe_print("Uploaded file {0}".format(filePath))
+            try:
+                size = int(msg[2])
+            except:
+                self.safe_print("Invalid upload request from {0}".format(clientDescriptor))
+                clientSock.sendall("Invalid upload request, could not parse file length".encode())
+                clientSock.close()
+                return
+            try:
+                with open(filePath, 'wb') as f:
+                    clientSock.sendall("ok".encode())
+                    data = b''
+                    while len(data) < size:
+                        remaining = size - len(data)
+                        data += clientSock.recv(4096 if remaining > 4096 else remaining)
+                    f.write(data)
+                    clientSock.sendall("ok {0}".format(len(data)).encode())
+            except:
+                if os.path.isfile(filePath):
+                    os.remove(filePath)
+                self.safe_print("Error uploading file {0} from {1}".format(filePath, clientDescriptor))
+                clientSock.sendall("Error receiving file.".encode())
+                clientSock.close()
+                return
+            self.safe_print("Received file {0}".format(filePath))
             
 
 
