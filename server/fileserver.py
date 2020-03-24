@@ -114,6 +114,7 @@ class FileServer:
                 clientSock.close()
                 return
 
+            clientSock.sendall("ok".encode())
             fileList = os.listdir(path)
             if len(fileList) == 0:
                 response = "<Empty>"
@@ -121,8 +122,7 @@ class FileServer:
                 response = ""
                 for f in fileList:
                     response += f + "\n"
-            clientSock.sendall("ok".encode())
-            time.sleep(0.0001)
+            
             self.safe_print("Sending directory contents of {0} to {1}".format(path, clientDescriptor))
             clientSock.sendall(response.encode())
 
@@ -171,7 +171,6 @@ class FileServer:
 
 
 
-############################################ REDO MAIN FUNCTION FOR BETTER COMMAND LINE FUNCTIONALITY
 def main():
     print("Starting file storage server.\nType 'help' for help menu or 'exit' to close the program.")
     # Create a server
