@@ -83,11 +83,13 @@ class FileServer:
         newSock.bind((self.host,p))
         newSock.settimeout(20)
         newSock.listen(0)
-        self.safe_print("Handler created on {0}".format(p))
+        self.safe_print("New handler created on {0}".format(p))
         try:
             clientSock, clientAddr = newSock.accept()
+            clientDescriptor = "Client at {0} on handler {1}".format(clientAddr[0], p)
         except socket.timeout:
-            return        
+            self.safe_print("No connection received on handler {0}, exiting..".format(p))
+            return    
         
         # Parse message and execute command
         rawdata = clientSock.recv(1024).decode("ascii").strip()
@@ -97,7 +99,7 @@ class FileServer:
         
         msg = rawdata.split()
 
-        self.safe_print("Client at {0} sent message: {1}".format(clientAddr, str(msg)))
+        self.safe_print("{0} sent message: {1}".format(clientDescriptor, str(msg)))
 
         # List files
         if msg[0] == "l":
@@ -105,10 +107,10 @@ class FileServer:
                 path = os.path.join(self.storageDir, msg[1])
             else:
                 path = self.storageDir
-            self.safe_print("Client at {0} requested directory contents of {1}".format(clientAddr, path))
+            self.safe_print("{0} requested directory contents of {1}".format(clientDescriptor, path))
             if not os.path.isdir(path):
                 clientSock.sendall("Error: requested directory does not exist".encode())
-                self.safe_print("!-- Error: Client at {0} requested to list directory that does not exist: {1}".format(clientAddr, path))
+                self.safe_print("!-- Error: {0} requested to list directory that does not exist: {1}".format(clientDescriptor, path))
                 clientSock.close()
                 return
 
@@ -121,7 +123,7 @@ class FileServer:
                     response += f + "\n"
             clientSock.sendall("ok".encode())
             time.sleep(0.0001)
-            self.safe_print("Sending directory contents of {0} to client at {1}".format(path, clientAddr))
+            self.safe_print("Sending directory contents of {0} to {1}".format(path, clientDescriptor))
             clientSock.sendall(response.encode())
 
 
@@ -130,10 +132,10 @@ class FileServer:
             filePath = os.path.join(self.storageDir, msg[1])
             if not os.path.isfile(filePath):
                 clientSock.sendall("Error: file does not exist".encode())
-                self.safe_print("!-- Error: Client at {0} requested file that does not exist: {1}".format(clientAddr, filePath))
+                self.safe_print("!-- Error: {0} requested file that does not exist: {1}".format(clientDescriptor, filePath))
                 clientSock.close()
                 return
-            self.safe_print("Client at {0} requested file: {1}".format(clientAddr, filePath))
+            self.safe_print("{0} requested file: {1}".format(clientDescriptor, filePath))
             try:
                 with open(filePath, 'rb') as f:
                     clientSock.sendall("ok".encode())
@@ -141,7 +143,7 @@ class FileServer:
                     self.safe_print("Sent file.")
                     clientSock.close()
             except:
-                self.safe_print("!-- Error sending requested file {0} on port {1}".format(filePath, clientAddr))
+                self.safe_print("!-- Error sending requested file {0} to {1}".format(filePath, clientDescriptor))
                 clientSock.close()
                 return
 
@@ -149,10 +151,10 @@ class FileServer:
         # Upload file
         if msg[0] == 'u':
             filePath = os.path.join(self.storageDir, msg[1])
-            self.safe_print("Client at {0} wants to upload file: {1}".format(clientAddr, filePath))
+            self.safe_print("{0} wants to upload file: {1}".format(clientDescriptor, filePath))
             if os.path.exists(filePath):
-                self.safe_print("!-- File {0} already exists, cannot be uploaded (port {1})".format(filePath, clientAddr))
-                clientSock.sendall("!-- File {0} already exists, cannot be uploaded (port {1})".format(filePath, clientAddr).encode())
+                self.safe_print("!-- File {0} already exists, cannot be uploaded ({1})".format(filePath, clientDescriptor))
+                clientSock.sendall("!-- File {0} already exists, cannot be uploaded ({1})".format(filePath, clientDescriptor).encode())
                 clientSock.close()
                 return
             with open(filePath, 'wb') as f:
