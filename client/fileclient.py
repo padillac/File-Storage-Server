@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys, socket, time
 
 def usage():
@@ -80,7 +82,7 @@ def uploadFile(sock, path):
 
 
 def main():
-    # Process command line args (server, port, message)
+    # Validate and process command line args (server, port, message)
     try:
         server = sys.argv[1].split(":")[0]
         port = int(sys.argv[1].split(":")[1])
@@ -92,18 +94,20 @@ def main():
     except:
         usage()
         sys.exit(1)
+    if option not in ["-u", "-d", "-l"]:
+        usage()
+        sys.exit(1)
 
+    # Connect to server and initiate transaction
     handlerSock = makeConnection(server, port)
 
     if option == "-u":
         uploadFile(handlerSock, target)
-    elif option == "-d":
+    if option == "-d":
         downloadFile(handlerSock, target)
-    elif option == "-l":
+    if option == "-l":
         listDir(handlerSock, target)
-    else:
-        usage()
-        sys.exit(1)
+    
 
     print("done.")
     sys.exit()
