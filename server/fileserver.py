@@ -115,7 +115,7 @@ class FileServer:
                 return
 
             clientSock.sendall("ok".encode())
-            time.sleep(0.0001)
+            time.sleep(0.001)
             fileList = os.listdir(path)
             if len(fileList) == 0:
                 response = "<Empty>\n"
