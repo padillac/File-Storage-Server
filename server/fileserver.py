@@ -118,7 +118,7 @@ class FileServer:
             time.sleep(0.0001)
             fileList = os.listdir(path)
             if len(fileList) == 0:
-                response = "<Empty>"
+                response = "<Empty>\n"
             else:
                 response = ""
                 for f in fileList:
