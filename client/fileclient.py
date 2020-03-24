@@ -17,7 +17,7 @@ def makeConnection(server, port):
         handlerSock.connect((server, handlerPort))
     except:
         try:
-            time.sleep(.0001)
+            time.sleep(.001)
             handlerSock = socket.socket()
             handlerSock.connect((server, handlerPort))
         except:
@@ -47,7 +47,7 @@ def listDir(sock, path):
         print("Directory listing for {0}:\n".format(path))
         print(data)
     except:
-        print("Error downloading file from server.")
+        print("Error receiving directory contents from server.")
 
 def downloadFile(sock, path):
     localPath = path.split("/")[-1]

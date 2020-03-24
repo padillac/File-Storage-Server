@@ -119,7 +119,7 @@ class FileServer:
                 for f in fileList:
                     response += f + "\n"
             clientSock.sendall("ok".encode())
-            time.sleep(0.00001)
+            time.sleep(0.0001)
             clientSock.sendall(response.encode())
 
 
