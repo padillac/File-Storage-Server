@@ -173,6 +173,7 @@ class FileServer:
 
 ############################################ REDO MAIN FUNCTION FOR BETTER COMMAND LINE FUNCTIONALITY
 def main():
+    print("Starting file storage server.\nType 'help' for help menu or 'exit' to close the program.")
     # Create a server
     server = FileServer()
         
