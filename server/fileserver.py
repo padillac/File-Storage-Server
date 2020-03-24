@@ -105,6 +105,7 @@ class FileServer:
                 path = os.path.join(self.storageDir, msg[1])
             else:
                 path = self.storageDir
+            self.safe_print("Client at {0} requested directory contents of {1}".format(clientAddr, path))
             if not os.path.isdir(path):
                 clientSock.sendall("Error: requested directory does not exist".encode())
                 self.safe_print("!-- Error: Client at {0} requested to list directory that does not exist: {1}".format(clientAddr, path))
@@ -120,6 +121,7 @@ class FileServer:
                     response += f + "\n"
             clientSock.sendall("ok".encode())
             time.sleep(0.0001)
+            self.safe_print("Sending directory contents of {0} to client at {1}".format(path, clientAddr))
             clientSock.sendall(response.encode())
 
 
@@ -136,7 +138,7 @@ class FileServer:
                 with open(filePath, 'rb') as f:
                     clientSock.sendall("ok".encode())
                     clientSock.sendfile(f)
-                    self.safe_print("Sent.")
+                    self.safe_print("Sent file.")
                     clientSock.close()
             except:
                 self.safe_print("!-- Error sending requested file {0} on port {1}".format(filePath, clientAddr))
@@ -156,9 +158,11 @@ class FileServer:
             with open(filePath, 'wb') as f:
                 clientSock.sendall("ok".encode())
                 f.write(clientSock.recv(4096))
+            self.safe_print("Uploaded file {0}".format(filePath))
             
 
-        print("--closing connection {0}--".format(clientSock))
+
+        self.safe_print("--closing connection {0}--".format(clientSock))
         clientSock.close()
         return
 
